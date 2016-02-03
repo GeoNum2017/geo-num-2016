@@ -16,21 +16,18 @@ def read_curve( filename ) :
     curve = curve.reshape(-1,2)
     return curve
 
+bfile = '../data/simple.bcv'
+#bfile = '../data/infinity.bcv'
+#bfile = '../data/spiral.bcv'
+bpoints = read_polygon(bfile)
+plt.plot(bpoints[:,0],bpoints[:,1],'bo-')
 
-infile = '../data/simple.bcv'
-#infile = '../data/infinity.bcv'
-#infile = '../data/spiral.bcv'
-cvfile = '../plots/bernstein.txt'
-#cvfile = '../plots/casteljau.txt'
-
-bpoints = read_polygon(infile)
-curve = read_curve(cvfile)
-
-plt.plot(bpoints[:,0],bpoints[:,1],c='b')
-plt.plot(curve[:,0],curve[:,1],c='r')
+cfile = '../plots/output.txt'
+#curve = read_curve(cfile)
+#plt.plot(curve[:,0],curve[:,1],'r-')
 
 plt.title('TP1 : Bezier curves')
 plt.grid(True)
 plt.axis('equal')
-#plt.savefig("output.png")
+#plt.savefig("../plots/output.png")
 plt.show()

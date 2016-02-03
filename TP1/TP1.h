@@ -6,21 +6,24 @@
 #include <string>
 #include <sstream>
 
+#include <cmath>
 #include <ctime>
 #include <cstdio>
 #include <cstdlib>
 
-#include <vector>
+#include <Eigen/Dense> // http://eigen.tuxfamily.org/dox-devel/AsciiQuickReference.txt
 
-#include <Eigen/Dense>
+typedef Eigen::Matrix<double,Eigen::Dynamic,2> MatX2; // matrix with two columns
+typedef Eigen::Matrix<double,1,2> Vec2;               // point/vector with two coordinates
+typedef Eigen::Matrix<double,1,Eigen::Dynamic> VecX;  // array
 
 /* uniform sampling of interval [0,1] */
-std::vector<float> uniformSampling(unsigned int num_samples)
+VecX uniformSampling(unsigned int num_samples)
 {
-    std::vector<float> samples( num_samples );
+    VecX samples( num_samples );
     float l = 1.0 / (float)(num_samples-1);
     for(unsigned int i = 0; i < num_samples; ++i)
-        samples[i] = i*l;
+        samples(i) = i*l;
     return samples;
 }
 
@@ -42,7 +45,7 @@ unsigned int combNumber(unsigned int n, unsigned int i)
 /* read Bezier points (BP) from a file */
 bool readBCV(
     const char * filename,
-    Mat2f& BP )
+    MatX2& BP )
 {   
     std::ifstream inputFile;
     std::string line;
@@ -57,13 +60,14 @@ bool readBCV(
     
     // resize the matrix
     BP.resize(degree+1,2);
+    BP.fill(0);
     
     for(unsigned int i=0;i < degree+1; i++)
     {
         // get coordinates of next Bezier point
         std::getline(inputFile,line);
         ss << line;
-        float x, y;
+        double x, y;
         ss >> x >> y;
         // store in Eigen matrix
         BP(i,0) = x;
@@ -79,7 +83,7 @@ bool readBCV(
 /* write data stored as an Eigen matrix */
 bool writeMatrixData(
     const char * filename,
-    const Mat2f& C )
+    const MatX2& C )
 {
     std::ofstream outputFile;
     
