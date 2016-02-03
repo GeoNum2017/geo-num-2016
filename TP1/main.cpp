@@ -36,14 +36,14 @@ void CasteljauCurve(
     vecf samples = uniformSampling(num_samples);
     unsigned int degree = BP.rows()-1;
     
-    /* TODO : implement De Casteljau algorithm */
+    /* TODO : implement the De Casteljau's algorithm */
 
 }
 
 int main()
 {
     // define number of samples to be computed
-    unsigned int num_samples = 1e6;
+    unsigned int num_samples = 100;
     
     // input files
     const char * i_simple    = "../data/simple.bcv";
@@ -54,7 +54,7 @@ int main()
     const char * o_bernstein = "../plots/bernstein.txt";
     const char * o_casteljau = "../plots/casteljau.txt";
     
-    // Bezier points = control polygon, (n+1) x 2 matrix
+    // Bezier points = control polygon, (n+1)x2 matrix
     Mat2f BP;
     // curve points
     Mat2f C_Casteljau, C_Bernstein;
@@ -72,9 +72,9 @@ int main()
     CasteljauCurve( C_Casteljau, BP, num_samples );
     measureTime(start);
     
-    // write output files
-    if( !writeMatrixData(o_bernstein,C_Bernstein) ) return -1;
-    if( !writeMatrixData(o_casteljau,C_Casteljau) ) return -1;
+    // export curves
+    //if( !writeMatrixData(o_bernstein,C_Bernstein) ) return -1;
+    //if( !writeMatrixData(o_casteljau,C_Casteljau) ) return -1;
 
     return 0;
 }
