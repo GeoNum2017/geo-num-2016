@@ -32,19 +32,21 @@ int main(int argc, char *argv[])
     degree = 2;
     MatX2 ControlPointsC1, SplinePointsC1;
     computeSplineC1( ControlPointsC1, InputPoints );
-    if( !evaluateSpline( SplinePointsC1, ControlPointsC1, degree, num_samples ))
-        return -1;
-    if( !writeSplineData( SplinePointsC1, curve_count, num_samples, out_dir+"c1/" ))
-        return -1;
+    // TODO : uncomment when needed
+    //if( !evaluateSpline( SplinePointsC1, ControlPointsC1, degree, num_samples ))
+    //    return -1;
+    //if( !writeSplineData( SplinePointsC1, curve_count, num_samples, out_dir+"c1/" ))
+    //    return -1;
     
     // C2 cubic spline
     degree = 3;
     MatX2 ControlPointsC2, SplinePointsC2;
     computeSplineC2( ControlPointsC2, InputPoints );
-    if( !evaluateSpline( SplinePointsC2, ControlPointsC2, degree, num_samples ))
-        return -1;
-    if( !writeSplineData( SplinePointsC2, curve_count, num_samples, out_dir+"c2/" ))
-        return -1;
+    // TODO : uncomment when needed
+    //if( !evaluateSpline( SplinePointsC2, ControlPointsC2, degree, num_samples ))
+    //    return -1;
+    //if( !writeSplineData( SplinePointsC2, curve_count, num_samples, out_dir+"c2/" ))
+    //    return -1;
 
     return 0;
 }
