@@ -2,3 +2,4 @@ build/
 solution.h
 output.*
 *.txt
+!CMakeLists.txt
