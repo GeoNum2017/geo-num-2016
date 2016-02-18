@@ -7,7 +7,7 @@ Vec2 DeBoor(
     const unsigned int j,
     const unsigned int r,
     const MatX2& ControlPoints,
-    const VecX& Nodes )
+    const VecX& Knots )
 {
     // TODO : calculate and return a B-spline point using De Boor's algorithm
     // hint : make your life simple — recursively!
@@ -19,14 +19,14 @@ Vec2 DeBoor(
 void evaluateBSpline(
     MatX2& SplinePoints,
     const MatX2& ControlPoints,
-    const VecX& Nodes,
+    const VecX& Knots,
     unsigned int num_samples )
 {
     // n+1 control points d_0 ... d_n
     unsigned int n = ControlPoints.rows()-1;
-    // m+1 parameter nodes t_0 ... t_m
-    unsigned int m = Nodes.size()-1;
-    // degree of the curve d = #nodes - #points - 1 = (m+1) - (n+1) - 1
+    // m+1 parameter knots t_0 ... t_m
+    unsigned int m = Knots.size()-1;
+    // degree of the curve d = #knots - #points - 1 = (m+1) - (n+1) - 1
     // which is the same as:
     unsigned int k = m-n-1;
     

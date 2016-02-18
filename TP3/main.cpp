@@ -19,13 +19,13 @@ int main(int argc, char *argv[])
     const std::string out_dir = "../plots/" + dataname + '/';
     
     MatX2 ControlPoints, SplinePoints;
-    VecX Nodes;
+    VecX Knots;
     
-    if(!readBSpline( in_filename, ControlPoints, Nodes )) {
+    if(!readBSpline( in_filename, ControlPoints, Knots )) {
         std::cerr << "ERROR: failed to open " << in_filename << std::endl;
         return -1;
     }
-    evaluateBSpline( SplinePoints, ControlPoints, Nodes, num_samples );
+    evaluateBSpline( SplinePoints, ControlPoints, Knots, num_samples );
     writeSplineData( SplinePoints, num_samples, out_dir );
     
     return 0;

@@ -31,12 +31,12 @@ VecX uniformSampling(double a,double b,unsigned int num_samples)
     return samples;
 }
 
-/* read B-spline control points and nodes */
+/* read B-spline control points and knots */
 template <typename MatXd>
 bool readBSpline(
     std::string filename,
     MatXd& ControlPoints,
-    VecX& Nodes )
+    VecX& Knots )
 {   
     std::ifstream inputFile;
     std::string line;
@@ -66,29 +66,29 @@ bool readBSpline(
     
     std::getline(inputFile,line);
     ss << line;
-    unsigned int num_nodes;
-    ss >> num_nodes;
+    unsigned int num_knots;
+    ss >> num_knots;
     
-    // resize the Nodes
-    Nodes.resize(num_nodes);
-    Nodes.fill(0);
+    // resize the Knots
+    Knots.resize(num_knots);
+    Knots.fill(0);
 
-    for(unsigned int i=0;i < num_nodes; i++)
+    for(unsigned int i=0;i < num_knots; i++)
     {
-        // get next node
+        // get next knot
         std::getline(inputFile,line);
         ss << line;
-        ss >> Nodes(i);
+        ss >> Knots(i);
     }
 
     inputFile.close();
     
     std::cout << "B-spline " << filename << " read.\n"
-              << "degree=" << Nodes.size()-ControlPoints.rows()-1 << "\n" // d = m-n-1
+              << "degree=" << Knots.size()-ControlPoints.rows()-1 << "\n" // d = m-n-1
               << ControlPoints.rows() << " control points :\n"
               << ControlPoints << std::endl
-              << Nodes.size() << " nodes :\n"
-              << Nodes << std::endl;
+              << Knots.size() << " knots :\n"
+              << Knots << std::endl;
     
     return true;
 }

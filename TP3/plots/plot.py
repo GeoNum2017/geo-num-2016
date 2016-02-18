@@ -13,14 +13,14 @@ def read_bspline( filename ) :
     # read control points
     points = np.fromfile(datafile,count=2*point_count,sep=' ',dtype=float)
     points = points.reshape(point_count,2)
-    # get number of nodes
+    # get number of knots
     l = datafile.readline()
-    node_count = np.fromstring(l,count=1,sep=' ',dtype=int)
-    # read nodes
-    nodes = np.fromfile(datafile,count=node_count,sep=' ',dtype=float)
+    knot_count = np.fromstring(l,count=1,sep=' ',dtype=int)
+    # read knots
+    knots = np.fromfile(datafile,count=knot_count,sep=' ',dtype=float)
     # close the file
     datafile.close()
-    return points, nodes
+    return points, knots
 
 
 # function to read evaluated curve points
@@ -54,7 +54,7 @@ if not dataname in ['simple','spiral','circle','camel'] :
     sys.exit()
     
 # read bspline data
-points, nodes = read_bspline('../data/' + dataname + '.bspline')
+points, knots = read_bspline('../data/' + dataname + '.bspline')
 # curve points dir
 out_dir = '../plots/' + dataname + '/'
 
@@ -64,7 +64,7 @@ plt.axis('equal')
 plt.axis('off')
 
 # bspline degree
-degree = nodes.shape[0] - points.shape[0] - 1
+degree = knots.shape[0] - points.shape[0] - 1
 # how many segments
 curve_count = points.shape[0] - degree
 
