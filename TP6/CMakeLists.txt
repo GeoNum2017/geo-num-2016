@@ -41,7 +41,7 @@ target_link_libraries(GLEW_1130
 if(UNIX AND NOT APPLE)
     set(OPENGL_LIBRARY
     ${OPENGL_LIBRARY}
-    -lGL -lGLU -lrt -lX11 -lXxf86vm -lXrandr -lpthread -lXi  -lXcursor -lXinerama
+    -lGL -lGLU -lrt -lX11 -lXxf86vm -lXrandr -lpthread -lXi  -lXcursor -lXinerama -lXrender -ldrm -lXdamage -lXext -ldl
     ${CMAKE_DL_LIBS}
     ${GLFW_LIBRARIES}
     )
@@ -60,6 +60,7 @@ elseif(DARWIN)
     )
 endif(UNIX AND NOT APPLE)
 
+message(${GLFW_LIBRARIES} )
 include_directories(
   .
   ..
@@ -84,4 +85,5 @@ add_executable(
 target_link_libraries(
   ${PROJECT_NAME}
   ${ALL_LIBS}
+  ${GLFW_STATIC_LIBRARIES}
 )
