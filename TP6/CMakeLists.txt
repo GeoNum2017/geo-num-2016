@@ -41,7 +41,7 @@ target_link_libraries(GLEW_1130
 if(UNIX AND NOT APPLE)
     set(OPENGL_LIBRARY
     ${OPENGL_LIBRARY}
-    -lGL -lGLU -lXrandr -lXext -lX11 -lrt
+    -lGL -lGLU -lrt -lX11 -lXxf86vm -lXrandr -lpthread -lXi  -lXcursor -lXinerama
     ${CMAKE_DL_LIBS}
     ${GLFW_LIBRARIES}
     )
