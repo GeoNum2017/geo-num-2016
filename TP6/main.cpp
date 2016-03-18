@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     const std::string in_filename = in_dir+dataname+".bpt";
     const std::string out_dir = "../plots/"+dataname+"/";
     
-    // read Bezier net
+    // Read Bezier nets
     std::vector<MatdXX> netX, netY, netZ;
     if (!readBPT(in_filename,netX,netY,netZ))
     {
@@ -24,18 +24,23 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    unsigned int num_samples = 20;
 
+    // TODO : (OPTIONAL) comment this if you have problems compiling the SimpleViewer class.
+    /**/
     // init the viewer
     SimpleViewer viewer;
     viewer.set_facecolor( 255, 163,   0 ); // [255,163,  0] = dark orange
     viewer.set_edgecolor(  55,  55,  55 ); // [ 55, 55, 55] = gray
+    /**/
+    
     
     // If everything works, you should see a cube.
     // TODO : comment this after BezierPatch was implemented
     viewer.generate_test_cube();
     
+    
     // compute Bezier patches
+    unsigned int num_samples = 20;
     for(unsigned int i=0; i < netX.size(); i++)
     {
         std::cout << "patch " << i+1 << "/" << netX.size() << std::endl;
@@ -51,20 +56,24 @@ int main(int argc, char *argv[]) {
         //viewer.add_patch(X,Y,Z);
         
         //
-        // TODO :
-        // if the SimpleViewer doesn't work for you, use the following code to export the computed patches
-        // then render them using plot.py
+        // TODO (OPTIONAL: do this if you have problems with compilation.)
         //
-        // In that case you'll need to remove/comment #include <SimpleViewer.h> and the corresponding code in this file.
+        // If the SimpleViewer doesn't work for you, use the following code to export the computed patches.
+        // Then render them using plot.py as usual; the script is provided.
         //
-        /*        
+        // In this case, you'll need to remove/comment #include <SimpleViewer.h> and the corresponding viewer lines in this file.
+        //
+        /*
         std::string out_filename = out_dir+"patch"+std::to_string(1001+i)+".off";
         if (!writePatch(out_filename,X,Y,Z))
         {
             std::cerr << "ERROR: cannot write " << out_filename << "\n";
             return -1;
         }
-        */
+        else
+            std::cerr << "  " << out_filename << " exported. (" << X.size() << " vertices)\n";
+        /**/
+        
     }
     return viewer.show();
     return 0;

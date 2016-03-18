@@ -19,16 +19,16 @@ VecX uniformSampling(unsigned int num_samples)
  * 
 */
 double CasteljauPoint(
-    const MatdXX X  ,
+    const MatdXX coord,
     const unsigned int m,
     const unsigned int n,
-    const unsigned int k,
-    const unsigned int l,
+    const unsigned int i,
+    const unsigned int j,
     const double u,
     const double v )
 {   
     // 
-    // TODO : implement the De Casteljau algorithm for patches
+    // TODO : implement the De Casteljau algorithm for Bezier surfaces
     //
 }
 /*
