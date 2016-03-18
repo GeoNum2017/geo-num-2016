@@ -53,7 +53,59 @@ class SimpleViewer
         {
             V = newV;
             F = newF;
-        }        
+        }
+        void generate_test_cube() 
+        {
+            //V.clear();
+            V.resize(8,3);
+            V <<
+            // front
+            -1.0, -1.0, +1.0,
+            +1.0, -1.0, +1.0,
+            +1.0, +1.0, +1.0,
+            -1.0, +1.0, +1.0,
+            // back
+            -1.0, -1.0, -1.0,
+            +1.0, -1.0, -1.0,
+            +1.0, +1.0, -1.0,
+            -1.0, +1.0, -1.0;
+            
+            //N.clear();
+            N.resize(8,3);
+            N <<
+            // front
+            -1.0, -1.0, +1.0,
+            +1.0, -1.0, +1.0,
+            +1.0, +1.0, +1.0,
+            -1.0, +1.0, +1.0,
+            // back
+            -1.0, -1.0, -1.0,
+            +1.0, -1.0, -1.0,
+            +1.0, +1.0, -1.0,
+            -1.0, +1.0, -1.0;
+            
+            //F.clear();
+            F.resize(12,3);
+            F <<
+            // front
+            0, 1, 2,
+            2, 3, 0,
+            // top
+            1, 5, 6,
+            6, 2, 1,
+            // back
+            7, 6, 5,
+            5, 4, 7,
+            // bottom     
+            4, 0, 3,
+            3, 7, 4,
+            // left
+            4, 5, 1,
+            1, 0, 4,
+            // right
+            3, 2, 6,
+            6, 7, 3;
+        }
         void clear_data()
         {
             V.setZero(0,3);
@@ -130,6 +182,12 @@ class SimpleViewer
             MODELRADIUS = std::max(AABBx, std::max(AABBy,AABBz) );
             CAMRADIUS   = 1.5 * MODELRADIUS; 
             RECOMPUTE_VIEWMAT = true;
+            
+            std::cout << std::endl
+                << "[ simple viewer help ]" << std::endl
+                << "  Zoom   : (mouse scroll) or [pageup]/[pagedown]" << std::endl
+                << "  Rotate : (mouse click & drag)" << std::endl
+                << std::endl;
         }
         
         void compile_shaders( void ) {

@@ -31,6 +31,10 @@ int main(int argc, char *argv[]) {
     viewer.set_facecolor( 255, 163,   0 ); // [255,163,  0] = dark orange
     viewer.set_edgecolor(  55,  55,  55 ); // [ 55, 55, 55] = gray
     
+    // If everything works, you should see a cube.
+    // TODO : comment this after BezierPatch was implemented
+    viewer.generate_test_cube();
+    
     // compute Bezier patches
     for(unsigned int i=0; i < netX.size(); i++)
     {
@@ -43,11 +47,11 @@ int main(int argc, char *argv[]) {
         MatdXX X, Y, Z;
         BezierPatch(X,Y,Z,nX,nY,nZ,num_samples);
         
-        // render in viewer
-        viewer.add_patch(X,Y,Z);
+        // TODO : uncomment this after BezierPatch was implemented
+        //viewer.add_patch(X,Y,Z);
         
         //
-        // HINT :
+        // TODO :
         // if the SimpleViewer doesn't work for you, use the following code to export the computed patches
         // then render them using plot.py
         //

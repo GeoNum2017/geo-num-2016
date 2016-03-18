@@ -1,5 +1,18 @@
 #ifndef TP6_GEONUM_TODO_H
 #define TP6_GEONUM_TODO_H
+/* 
+ * 
+ *uniform sampling of the interval [0,1] 
+ * 
+ */
+VecX uniformSampling(unsigned int num_samples)
+{
+    VecX samples( num_samples );
+    float l = 1.0 / (float)(num_samples-1);
+    for(unsigned int i = 0; i < num_samples; ++i)
+        samples(i) = i*l;
+    return samples;
+}
 /*
  * 
  * Casteljau : tensor product version
@@ -57,18 +70,5 @@ bool BezierPatch(
     // TODO : save surface points into coordinate matrices X, Y, Z
     // ...use double loop for rows & cols of the matrices
     //
-}
-/* 
- * 
- *uniform sampling of the interval [0,1] 
- * 
- */
-VecX uniformSampling(unsigned int num_samples)
-{
-    VecX samples( num_samples );
-    float l = 1.0 / (float)(num_samples-1);
-    for(unsigned int i = 0; i < num_samples; ++i)
-        samples(i) = i*l;
-    return samples;
 }
 #endif
