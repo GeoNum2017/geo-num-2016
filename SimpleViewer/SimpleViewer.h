@@ -27,7 +27,7 @@ class SimpleViewer
     public: 
         GLFWwindow* window;
         // vertex array id
-        GLuint vertex_array_id;
+        GLuint vao;
         // buffers
         GLuint vbo_vertices;
         GLuint vbo_normals;
@@ -44,9 +44,11 @@ class SimpleViewer
         MatdX3 V, N;
         glm::vec3 FACE_COLOR;
         glm::vec3 EDGE_COLOR;
+        glm::vec3 CONTROLNET_COLOR;
         double az, el; // spherical angles for camera
         void set_facecolor(int r, int g, int b){FACE_COLOR=glm::vec3( (float)r/255.0,(float)g/255.0,(float)b/255.0);}
         void set_edgecolor(int r, int g, int b){EDGE_COLOR=glm::vec3( (float)r/255.0,(float)g/255.0,(float)b/255.0);}
+        void set_cnetcolor(int r, int g, int b){CONTROLNET_COLOR=glm::vec3( (float)r/255.0,(float)g/255.0,(float)b/255.0);}
         void set_mesh(
             const MatdX3 &newV,
             const MatiX3 &newF )
@@ -115,7 +117,8 @@ class SimpleViewer
         void add_patch(
             const MatdXX &X,
             const MatdXX &Y,
-            const MatdXX &Z )
+            const MatdXX &Z,
+            bool wireframe = false )
         {
             unsigned int countU = X.rows();
             unsigned int countV = X.cols();
@@ -153,19 +156,23 @@ class SimpleViewer
                 newF += (shift+1) * MatiX3::Ones(numF,3);
             V.resize(oldV.rows()+newV.rows(), oldV.cols());
             V << oldV,
-                 newV;            
+                    newV;            
             F.resize(oldF.rows()+newF.rows(), oldF.cols());
             F << oldF,
-                 newF;
+                newF;            
             double x_mean = V.col(0).array().mean();
             double y_mean = V.col(1).array().mean();
             double z_mean = V.col(2).array().mean();
             CAMLOOKAT = glm::vec3(x_mean,y_mean,z_mean);
         }
+        void add_wireframe(const MatdXX &X,const MatdXX &Y,const MatdXX &Z){add_patch(X,Y,Z,true);}
+        void add_surface(const MatdXX &X,const MatdXX &Y,const MatdXX &Z){add_patch(X,Y,Z,false);}
         
         void fill_buffers( void )
         {            
             if(V.isZero(0) || F.isZero(0)) {std::cout << "WARNING: vertices or faces are empty." << std::endl;return;}
+            std::cout << "setting wireframe positions" << std::endl;
+            // set vertex positions            
             std::cout << "setting positions" << std::endl;
             // set vertex positions
             glGenBuffers(1, &vbo_vertices);
@@ -176,6 +183,7 @@ class SimpleViewer
             glGenBuffers(1, &ibo_elements);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_elements);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(F(0,0))*F.size(), &F(0,0), GL_STATIC_DRAW);
+            
             double AABBx = V.col(0).maxCoeff() - V.col(0).minCoeff();
             double AABBy = V.col(1).maxCoeff() - V.col(1).minCoeff();
             double AABBz = V.col(2).maxCoeff() - V.col(2).minCoeff();
@@ -196,11 +204,11 @@ class SimpleViewer
             int InfoLogLength;
             std::string mesh_vertex_shader_string = 
             "#version 330\nlayout(location = 0) in vec3 vertexPosition_modelspace;"
-            "uniform mat4 Model;uniform mat4 View;uniform mat4 Projection;"
-            "void main(){gl_Position =  Projection * View * Model * vec4(vertexPosition_modelspace,1);}";
+            "uniform mat4 Model;uniform mat4 View;uniform mat4 Projection;out vec3 vertexPosition_cameraspace;"
+            "void main(){vertexPosition_cameraspace = (View * Model * vec4(vertexPosition_modelspace,1)).xyz; gl_Position =  Projection * View * Model * vec4(vertexPosition_modelspace,1);}";
             std::string mesh_fragment_shader_string = 
-            "#version 330\nuniform vec3 color;out vec4 fragColor;"
-            "void main(){fragColor = vec4(color,0);}";
+            "#version 330\nuniform vec3 color;in vec3 vertexPosition_cameraspace;out vec4 fragColor;"
+            "void main(){float dist=dot(vertexPosition_cameraspace,vertexPosition_cameraspace);fragColor = vec4(color,0);//dist*0.05*vec4(1,1,1,0);\n}";
             // Compile vertex shader
             char const * VertexSourcePointer = mesh_vertex_shader_string.c_str();
             GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -258,6 +266,7 @@ class SimpleViewer
             el = - 3.14f / 3.0f; // -60 deg;
             set_facecolor(255,163,0); // dark orange
             set_edgecolor(55,55,55); // gray
+            set_cnetcolor(255,0,0); // gray
             if( !glfwInit() )
             {
                 fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -269,7 +278,7 @@ class SimpleViewer
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             // Open a window and create its OpenGL context
-            window = glfwCreateWindow( VIEWPORT_W, VIEWPORT_H, "TP6", NULL, NULL);
+            window = glfwCreateWindow( VIEWPORT_W, VIEWPORT_H, "GeoNumTP", NULL, NULL);
             if( window == NULL ){
                     getchar();
                     glfwTerminate();
@@ -300,8 +309,8 @@ class SimpleViewer
             glEnable( GL_POLYGON_OFFSET_FILL );
             glPolygonOffset( 1.0, 1.0 );
             // Vertex Array
-            glGenVertexArrays(1, &vertex_array_id);
-            glBindVertexArray(vertex_array_id);
+            glGenVertexArrays(1, &vao);
+            glBindVertexArray(vao);
             // compile shaders
             compile_shaders();
             // Get a handle for MVP matrices(uniform)
@@ -342,8 +351,18 @@ class SimpleViewer
             Model = glm::mat4(1.0f);
         }
         int show() {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
             fill_buffers();
+            int linecount = 0;
+            
+            // edges
+            MatiX2 E;
+            E.resize(2*F.rows(),2);
+            E << F.col(0),
+                 F.col(1),
+                 F.col(1),
+                 F.col(2);
+            
             do {
                 // Clear the screen
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -376,22 +395,27 @@ class SimpleViewer
                 glUniformMatrix4fv(      model_id, 1, GL_FALSE, &Model[0][0]);
                 glUniformMatrix4fv(       view_id, 1, GL_FALSE, &View[0][0]);
                 glUniformMatrix4fv( projection_id, 1, GL_FALSE, &Projection[0][0]);
+                
                 // 0 : Vertex positions
                 glEnableVertexAttribArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices);
                 glVertexAttribPointer(0,3,GL_DOUBLE,GL_FALSE,0,(void*)0);
-                // Elements = Triangles
+                
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices);
+                
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_elements);
-                int size;  glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
-                // Set color
-                // draw faces
-                glUniform3f( color_id, FACE_COLOR.r, FACE_COLOR.g, FACE_COLOR.b );
-                glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-                glDrawElements(GL_TRIANGLES, size/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
-                // draw edges
+                if(!SHOW_WIREFRAME) {
+                    // Faces
+                    glUniform3f( color_id, FACE_COLOR.r, FACE_COLOR.g, FACE_COLOR.b );
+                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(F(0,0))*F.size(), &F(0,0), GL_STATIC_DRAW);
+                    glDrawElements(GL_TRIANGLES, F.rows()*F.cols(), GL_UNSIGNED_SHORT, 0);
+                }
+                // Egdes
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(F(0,0))*E.size(), &E(0,0), GL_STATIC_DRAW);
                 glUniform3f( color_id, EDGE_COLOR.r, EDGE_COLOR.g, EDGE_COLOR.b );
-                glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-                glDrawElements(GL_TRIANGLES, size/sizeof(GLushort), GL_UNSIGNED_SHORT, 0);
+                glDrawElements(GL_LINES, E.rows()*E.cols(), GL_UNSIGNED_SHORT, 0);
+                
+                // TODO : use glDrawArrays() instead ?
+                
                 // Disable attribute arrays
                 glDisableVertexAttribArray(0);
                 // Swap buffers
@@ -405,7 +429,7 @@ class SimpleViewer
             glDeleteBuffers(1, &vbo_normals);
             glDeleteBuffers(1, &ibo_elements);
             glDeleteProgram(program_id);
-            glDeleteVertexArrays(1, &vertex_array_id);
+            glDeleteVertexArrays(1, &vao);
             // Close OpenGL window and terminate GLFW
             glfwTerminate();
             return 0;
