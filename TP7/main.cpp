@@ -33,10 +33,21 @@ int main(int argc, char *argv[]) {
     // evaluate B-spline points
     evaluateBSpline( X, Y, Z, netX, netY, netZ, knotsU, knotsV, num_samples );
     
+    
+    //*******************//
+    //** SimpleViewer **//
+    //*****************//
+    
     // init the viewer
     SimpleViewer viewer;
+    // add test cube
+    // TODO : comment this after implementing evaluateBSpline()
+    viewer.generate_test_cube();
+    
     // add our patch
-    viewer.add_surface(X,Y,Z);
+    // TODO : uncomment this after implementing evaluateBSpline()
+    //viewer.add_surface(X,Y,Z);
+    
     //
     // TODO OPTIONAL : visualise the control net
     //viewer.add_surface(netX,netY,netZ);
@@ -46,14 +57,18 @@ int main(int argc, char *argv[]) {
     viewer.set_edgecolor(  55,  55,  55 ); // [ 55, 55, 55] = gray
     return viewer.show();
     
+    
+    //*******************************//
+    //** OPTIONAL : Export to OFF **//
+    //*****************************//
     //
-    // TODO OPTIONAL: do this if you still have problems with the compilation of SimpleViewer.
+    // OPTIONAL TODO : do this if you still have problems with the compilation of SimpleViewer.
     //
     // If the SimpleViewer doesn't work for you, use the following code to export the computed patches.
     // Then render them using plot.py as usual; the script is provided.
     //
     // In this case, you'll need to remove/comment #include <SimpleViewer.h> and the corresponding viewer lines in this file.
-    //
+    //    
     
     /*
     std::string out_filename = out_dir+"patch.off";

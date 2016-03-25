@@ -31,21 +31,15 @@ else :
     dataname = sys.argv[1]
     
 # read data
-out_dir = '../plots/' + dataname + '/'
-files = os.listdir(out_dir)
-files.sort()
+off_file = '../plots/' + dataname + '/patch.off'
+V, F = read_off( off_file )
 
+# plot
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.clear()
 ax.axis('equal')
 ax.axis('on')
-
-for file in files :
-    if file.endswith(".off") :
-        print(file)
-        V, F = read_off( out_dir + file )
-        ax.plot_trisurf(V[:,0], V[:,1], V[:,2], edgecolor='none')
-
+ax.plot_trisurf(V[:,0], V[:,1], V[:,2], edgecolor='none')
 #plt.savefig('../plots/out.png',dpi = 200)
 plt.show()

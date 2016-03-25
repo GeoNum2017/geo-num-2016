@@ -18,12 +18,12 @@ Vec3 DeBoor_curve(
         return ControlPoints.row(j);
     else {
         unsigned int n = ControlPoints.rows()-1; // n+1 control points d_0 ... d_n
-        unsigned int m = Knots.size()-1;         // m+1 nodes t_0 ... t_m
+        unsigned int m = Knots.size()-1;         // m+1 knots t_0 ... t_m
         unsigned int k = m-n-1;                  // degree of the curve
         double w = ( t - Knots(j) ) / ( Knots(j+k-r+1) - Knots(j) );
         return
-            w * DeBoor3(t,j  ,r-1,ControlPoints,Knots) 
-        +(1-w)* DeBoor3(t,j-1,r-1,ControlPoints,Knots);
+        (1-w)* DeBoor_curve( t, j-1, r-1, ControlPoints, Knots )
+          +w * DeBoor_curve( t, j  , r-1, ControlPoints, Knots ); 
     }
 }
 
@@ -41,10 +41,10 @@ void evaluateBSpline(
     unsigned int num_samples // number of samples par patch will be num_samples^2
 ){
     unsigned int 
-        m = netX.rows()-1,
-        n = netX.cols()-1,
-        k = nodesU.size()-(m+1)-1,
-        l = nodesV.size()-(n+1)-1,
+        m = netX.rows()-1,            // m+1 control points in the direction u
+        n = netX.cols()-1,            // n+1 control points in the direction v
+        k = knotsU.size()-(m+1)-1,    // degree k in the direction u
+        l = knotsV.size()-(n+1)-1,    // degree l in the direction v
         rows = num_samples * (m-k+1), // number of rows in the big output matrices X, Y, Z
         cols = num_samples * (n-l+1); // number of cols in the big output matrices X, Y, Z
     

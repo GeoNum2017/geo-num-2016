@@ -192,9 +192,12 @@ class SimpleViewer
             RECOMPUTE_VIEWMAT = true;
             
             std::cout << std::endl
-                << "[ simple viewer help ]" << std::endl
-                << "  Zoom   : (mouse scroll) or [pageup]/[pagedown]" << std::endl
-                << "  Rotate : (mouse click & drag)" << std::endl
+                << "******************************" << std::endl
+                << "****  simple viewer help  ****" << std::endl
+                << "******************************" << std::endl
+                << "    wire on/off : [W]" << std::endl
+                << "    zoom        : (mouse scroll) or [pageup]/[pagedown]" << std::endl
+                << "    rotate      : (mouse click & drag)" << std::endl
                 << std::endl;
         }
         
