@@ -118,33 +118,45 @@ class SimpleViewer
             const MatdXX &X,
             const MatdXX &Y,
             const MatdXX &Z,
-            bool wireframe = false )
+            bool wireframe = false,
+            bool closedx = false,
+            bool closedy = false )
         {
-            unsigned int countU = X.rows();
-            unsigned int countV = X.cols();
+            unsigned int 
+                vx = X.cols(),
+                vy = X.rows(),
+                fx = vx,
+                fy = vy;
+                
+            if( !closedx ) fx--;
+            if( !closedy ) fy--;
+            
             // check if matrices have the correct size
-            assert( countU==Y.rows() && countU==Z.rows() &&  countV==Y.cols() && countV==Z.cols() );
-            unsigned int numV = countU*countV;
-            unsigned int numF = 2*(countU-1)*(countV-1);
-            MatdX3 newV;
-            MatiX3 newF;
+            assert( vy==Y.rows() && vy==Z.rows() &&  vx==Y.cols() && vx==Z.cols() );
+            
             // V : generate geometry
+            unsigned int numV = vy * vx;
+            MatdX3 newV;
             newV.resize(numV,3);
             newV.fill(0);
             MatdXX co;
             co = X; co.resize(numV,1); newV.col(0) = co;                        
             co = Y; co.resize(numV,1); newV.col(1) = co;
             co = Z; co.resize(numV,1); newV.col(2) = co;
+            
             // F : generate topology
+            unsigned int numF = 2 * fy * fx;
+            MatiX3 newF;
             newF.resize(numF,3);
-            for(unsigned int i=0; i<countU-1; i++) {
-                for(unsigned int j=0; j<countV-1; j++) {
-                    short A = i*countU+j+0;
-                    short B = A+1;
-                    short C = (i+1)*countU+j+0;
-                    short D = C+1;
-                    newF.row( 2* (i*(countU-1) + j) + 0 ) = Veci3(A,B,D);
-                    newF.row( 2* (i*(countU-1) + j) + 1 ) = Veci3(D,C,A);
+            unsigned int fcount = 0;
+            for( unsigned y=0; y < fy; y++ ) {
+                for( unsigned x=0; x < fx; x++ ) {
+                    short A = ((y+0)%vy)*vy + x;
+                    short B = ((y+0)%vy)*vy + (x+1)%vx;
+                    short C = ((y+1)%vy)*vy + x;
+                    short D = ((y+1)%vy)*vy + (x+1)%vx;
+                    newF.row(fcount++) = Veci3(A,B,D);
+                    newF.row(fcount++) = Veci3(D,C,A);
                 }
             }
             MatdX3 oldV = V; // oldN = N;
@@ -166,7 +178,7 @@ class SimpleViewer
             CAMLOOKAT = glm::vec3(x_mean,y_mean,z_mean);
         }
         void add_wireframe(const MatdXX &X,const MatdXX &Y,const MatdXX &Z){add_patch(X,Y,Z,true);}
-        void add_surface(const MatdXX &X,const MatdXX &Y,const MatdXX &Z){add_patch(X,Y,Z,false);}
+        void add_surface(const MatdXX &X,const MatdXX &Y,const MatdXX &Z,bool closedU=false,bool closedV=false){add_patch(X,Y,Z,false,closedU,closedV);}
         
         void fill_buffers( void )
         {            
@@ -305,14 +317,14 @@ class SimpleViewer
             // Enable depth test
             glEnable(GL_DEPTH_TEST);
             // clear depth
-            glClearDepth( 1.0f );
+            glClearDepth(1.0f);
             // Accept fragment if it closer to the camera than the former one
             glDepthFunc(GL_LESS);
             // polygon offset
-            glEnable( GL_POLYGON_OFFSET_FILL );
-            glPolygonOffset( 1.0, 1.0 );
+            glEnable(GL_POLYGON_OFFSET_FILL);
+            glPolygonOffset(1.0f,1.0f);
             // Vertex Array
-            glGenVertexArrays(1, &vao);
+            glGenVertexArrays(1,&vao);
             glBindVertexArray(vao);
             // compile shaders
             compile_shaders();
@@ -348,7 +360,7 @@ class SimpleViewer
                 up                   // Head is up (set to 0,-1,0 to look upside-down)
             );
             // Projection matrix : 45° Field of View, ratio, display range : 0.1 unit <-> 100 units
-            Projection = glm::perspective(45.0f, (GLfloat) VIEWPORT_W / (GLfloat) VIEWPORT_H, 0.1f, 100.0f);
+            Projection = glm::perspective(45.0f, (GLfloat) VIEWPORT_W / (GLfloat) VIEWPORT_H, 0.001f, 10000.0f);
             glViewport(0, 0,VIEWPORT_W, VIEWPORT_H);
             // Model matrix = identity
             Model = glm::mat4(1.0f);
