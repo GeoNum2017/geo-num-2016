@@ -14,14 +14,20 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <Eigen/Dense> 
 #include <typedefs.h>
+#include <igl/per_vertex_normals.h>
 bool ROTATE = false, RECOMPUTE_VIEWMAT = false;
 double XPOS, YPOS;
 double CAMRADIUS = 5.0;
 glm::vec3 CAMLOOKAT = glm::vec3(0.0,0.0,0.0);
+glm::vec4 LIGHTPOS = glm::vec4(10.0f,-10.0f,10.0f,0.0f); // 0.0 at the end means directional light
 double MODELRADIUS = 1;
 unsigned int VIEWPORT_W = 1280;
 unsigned int VIEWPORT_H = 800;
 bool SHOW_WIREFRAME = true;
+bool SHOW_FACES = true;
+bool FLAT_SHADING = false;
+bool LIGHT_ON = true;
+bool QUADS = false;
 class SimpleViewer
 {        
     public: 
@@ -35,9 +41,10 @@ class SimpleViewer
         // shader program id
         GLuint program_id;
         // uniform shader variables
-        GLuint model_id, view_id, projection_id, color_id;
+        GLuint model_id, view_id, projection_id, color_id, lightpos_id, lighton_id, flatshade_id;
         // model, view, projection matrices
         glm::mat4 Model, View, Projection;
+        glm::vec3 LightPosition;
         // mesh topology = faces
         MatiX3 F;
         // mesh geometry
@@ -49,15 +56,27 @@ class SimpleViewer
         void set_facecolor(int r, int g, int b){FACE_COLOR=glm::vec3( (float)r/255.0,(float)g/255.0,(float)b/255.0);}
         void set_edgecolor(int r, int g, int b){EDGE_COLOR=glm::vec3( (float)r/255.0,(float)g/255.0,(float)b/255.0);}
         void set_cnetcolor(int r, int g, int b){CONTROLNET_COLOR=glm::vec3( (float)r/255.0,(float)g/255.0,(float)b/255.0);}
-        void set_mesh(
-            const MatdX3 &newV,
-            const MatiX3 &newF )
+        
+        void clear_data()
         {
+            V.setZero(0,3);
+            N.setZero(0,3);
+            F.setZero(0,3);
+        }
+        void set_mesh(
+            const MatdX3& newV,
+            const MatiX3& newF )
+        {
+            clear_data();
+            QUADS = false;
             V = newV;
             F = newF;
+            igl::per_vertex_normals(V,F,N);
         }
         void generate_test_cube() 
         {
+            clear_data();
+            QUADS = true;
             //V.clear();
             V.resize(8,3);
             V <<
@@ -108,12 +127,6 @@ class SimpleViewer
             3, 2, 6,
             6, 7, 3;
         }
-        void clear_data()
-        {
-            V.setZero(0,3);
-            N.setZero(0,3);
-            F.setZero(0,3);
-        }
         void add_patch(
             const MatdXX &X,
             const MatdXX &Y,
@@ -122,6 +135,7 @@ class SimpleViewer
             bool closedx = false,
             bool closedy = false )
         {
+            QUADS = true;
             unsigned int 
                 vx = X.cols(),
                 vy = X.rows(),
@@ -177,21 +191,37 @@ class SimpleViewer
             double z_mean = V.col(2).array().mean();
             CAMLOOKAT = glm::vec3(x_mean,y_mean,z_mean);
         }
-        void add_wireframe(const MatdXX &X,const MatdXX &Y,const MatdXX &Z){add_patch(X,Y,Z,true);}
-        void add_surface(const MatdXX &X,const MatdXX &Y,const MatdXX &Z,bool closedU=false,bool closedV=false){add_patch(X,Y,Z,false,closedU,closedV);}
-        
+        void add_wireframe(
+            const MatdXX &X,
+            const MatdXX &Y,
+            const MatdXX &Z)
+        {
+            add_patch(X,Y,Z,true);
+        }
+        void add_surface(
+            const MatdXX &X,
+            const MatdXX &Y,
+            const MatdXX &Z,
+            bool closedU=false,
+            bool closedV=false)
+        {
+            add_patch(X,Y,Z,false,closedU,closedV);
+        }
         void fill_buffers( void )
         {            
-            if(V.isZero(0) || F.isZero(0)) {std::cout << "WARNING: vertices or faces are empty." << std::endl;return;}
-            std::cout << "setting wireframe positions" << std::endl;
-            // set vertex positions            
-            std::cout << "setting positions" << std::endl;
-            // set vertex positions
+            if(V.isZero(0) || F.isZero(0)) {std::cout << "WARNING: vertices or faces are empty." << std::endl;return;}  
+            
+            std::cout << "setting positions\n";
             glGenBuffers(1, &vbo_vertices);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(V(0,0))*V.size(), &V(0,0), GL_STATIC_DRAW);
-            std::cout << "setting faces" << std::endl;
-            // set elements
+            glBufferData(GL_ARRAY_BUFFER, sizeof(V(0,0))*V.size(), &V(0,0), GL_STATIC_DRAW); 
+            
+            std::cout << "setting normals\n";
+            glGenBuffers(1, &vbo_normals);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(N(0,0))*N.size(), &N(0,0), GL_STATIC_DRAW);
+            
+            std::cout << "setting faces\n";
             glGenBuffers(1, &ibo_elements);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_elements);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(F(0,0))*F.size(), &F(0,0), GL_STATIC_DRAW);
@@ -207,9 +237,12 @@ class SimpleViewer
                 << "******************************" << std::endl
                 << "****  simple viewer help  ****" << std::endl
                 << "******************************" << std::endl
-                << "    wire on/off : [W]" << std::endl
-                << "    zoom        : (mouse scroll) or [pageup]/[pagedown]" << std::endl
-                << "    rotate      : (mouse click & drag)" << std::endl
+                << "    face toggle  : [F]" << std::endl
+                << "    edge toggle  : [E]" << std::endl
+                << "    light on/off : [L]" << std::endl
+                << "    smooth/flat  : [S]" << std::endl
+                << "    zoom         : (mouse scroll) or [pageup]/[pagedown]" << std::endl
+                << "    rotate       : (mouse click & drag)" << std::endl
                 << std::endl;
         }
         
@@ -217,13 +250,17 @@ class SimpleViewer
             // Logging
             GLint Result = GL_FALSE;
             int InfoLogLength;
-            std::string mesh_vertex_shader_string = 
-            "#version 330\nlayout(location = 0) in vec3 vertexPosition_modelspace;"
-            "uniform mat4 Model;uniform mat4 View;uniform mat4 Projection;out vec3 vertexPosition_cameraspace;"
-            "void main(){vertexPosition_cameraspace = (View * Model * vec4(vertexPosition_modelspace,1)).xyz; gl_Position =  Projection * View * Model * vec4(vertexPosition_modelspace,1);}";
-            std::string mesh_fragment_shader_string = 
-            "#version 330\nuniform vec3 color;in vec3 vertexPosition_cameraspace;out vec4 fragColor;"
-            "void main(){float dist=dot(vertexPosition_cameraspace,vertexPosition_cameraspace);fragColor = vec4(color,0);//dist*0.05*vec4(1,1,1,0);\n}";
+            
+            std::ifstream ifstr1("../../SimpleViewer/phong.vert.glsl");
+            std::stringstream buffer1;
+            buffer1 << ifstr1.rdbuf();
+            std::string mesh_vertex_shader_string = buffer1.str();
+            
+            std::ifstream ifstr2("../../SimpleViewer/phong.frag.glsl");
+            std::stringstream buffer2;
+            buffer2 << ifstr2.rdbuf();
+            std::string mesh_fragment_shader_string = buffer2.str();
+            
             // Compile vertex shader
             char const * VertexSourcePointer = mesh_vertex_shader_string.c_str();
             GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -332,7 +369,10 @@ class SimpleViewer
             model_id = glGetUniformLocation(program_id, "Model");
             view_id = glGetUniformLocation(program_id, "View");
             projection_id = glGetUniformLocation(program_id, "Projection");
-            color_id = glGetUniformLocation(program_id, "color");
+            color_id = glGetUniformLocation(program_id, "ConstColor");
+            lightpos_id = glGetUniformLocation(program_id, "LightPosition_worldspace");
+            lighton_id = glGetUniformLocation(program_id, "LightOn");
+            flatshade_id = glGetUniformLocation(program_id, "FlatShading");
             update_camera(0,0);
         }
         void update_camera( double dx, double dy )
@@ -370,13 +410,20 @@ class SimpleViewer
             fill_buffers();
             int linecount = 0;
             
-            // edges
+            /** SETTING EDGES **/
             MatiX2 E;
-            E.resize(2*F.rows(),2);
-            E << F.col(0),
-                 F.col(1),
-                 F.col(1),
-                 F.col(2);
+            if( QUADS ){
+                E.resize(2*F.rows(),2);
+                E << 
+                    F.col(0),F.col(1),
+                    F.col(1),F.col(2);
+            }else{
+                E.resize(3*F.rows(),2);
+                E << 
+                    F.col(0),F.col(1),
+                    F.col(1),F.col(2),
+                    F.col(2),F.col(0);
+            }
             
             do {
                 // Clear the screen
@@ -411,28 +458,36 @@ class SimpleViewer
                 glUniformMatrix4fv(       view_id, 1, GL_FALSE, &View[0][0]);
                 glUniformMatrix4fv( projection_id, 1, GL_FALSE, &Projection[0][0]);
                 
+                // Light position
+                glUniform4f( lightpos_id, LIGHTPOS.x, LIGHTPOS.y, LIGHTPOS.z, LIGHTPOS.w );
+                glUniform1i( lighton_id, (int) LIGHT_ON );
+                glUniform1i( flatshade_id, (int) FLAT_SHADING );
+                
                 // 0 : Vertex positions
                 glEnableVertexAttribArray(0);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices);
                 glVertexAttribPointer(0,3,GL_DOUBLE,GL_FALSE,0,(void*)0);
                 
-                glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices);
+                // 1 : Vertex normals
+                glEnableVertexAttribArray(1);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);
+                glVertexAttribPointer(1,3,GL_DOUBLE,GL_FALSE,0,(void*)0);
                 
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_elements);
-                if(!SHOW_WIREFRAME) {
-                    // Faces
-                    glUniform3f( color_id, FACE_COLOR.r, FACE_COLOR.g, FACE_COLOR.b );
+                if(SHOW_FACES) {
                     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(F(0,0))*F.size(), &F(0,0), GL_STATIC_DRAW);
+                    glUniform3f( color_id, FACE_COLOR.r, FACE_COLOR.g, FACE_COLOR.b );
                     glDrawElements(GL_TRIANGLES, F.rows()*F.cols(), GL_UNSIGNED_SHORT, 0);
                 }
-                // Egdes
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(F(0,0))*E.size(), &E(0,0), GL_STATIC_DRAW);
-                glUniform3f( color_id, EDGE_COLOR.r, EDGE_COLOR.g, EDGE_COLOR.b );
-                glDrawElements(GL_LINES, E.rows()*E.cols(), GL_UNSIGNED_SHORT, 0);
-                
-                // TODO : use glDrawArrays() instead ?
+                if(SHOW_WIREFRAME) {
+                    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(E(0,0))*E.size(), &E(0,0), GL_STATIC_DRAW);
+                    glUniform3f( color_id, EDGE_COLOR.r, EDGE_COLOR.g, EDGE_COLOR.b );
+                    glDrawElements(GL_LINES, E.rows()*E.cols(), GL_UNSIGNED_SHORT, 0);
+                }
                 
                 // Disable attribute arrays
                 glDisableVertexAttribArray(0);
+                glDisableVertexAttribArray(1);
                 // Swap buffers
                 glfwSwapBuffers(window);
                 glfwPollEvents();
@@ -484,6 +539,12 @@ class SimpleViewer
         {
             if (key == GLFW_KEY_W && action==GLFW_PRESS )
                 SHOW_WIREFRAME = !SHOW_WIREFRAME;
+            else if (key == GLFW_KEY_F && action==GLFW_PRESS )
+                SHOW_FACES = !SHOW_FACES;
+            else if (key == GLFW_KEY_S && action==GLFW_PRESS )
+                FLAT_SHADING = !FLAT_SHADING;
+            else if (key == GLFW_KEY_L && action==GLFW_PRESS )
+                LIGHT_ON = !LIGHT_ON;
         }
         ~SimpleViewer() {}
 };
