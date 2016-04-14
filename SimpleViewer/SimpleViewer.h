@@ -14,7 +14,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <Eigen/Dense> 
 #include <typedefs.h>
-#include <igl/per_vertex_normals.h>
+#include "../libigl/include/igl/per_vertex_normals.h"
 bool ROTATE = false, RECOMPUTE_VIEWMAT = false;
 double XPOS, YPOS;
 double CAMRADIUS = 5.0;
@@ -71,7 +71,6 @@ class SimpleViewer
             QUADS = false;
             V = newV;
             F = newF;
-            igl::per_vertex_normals(V,F,N);
         }
         void generate_test_cube() 
         {
@@ -216,6 +215,8 @@ class SimpleViewer
             glBindBuffer(GL_ARRAY_BUFFER, vbo_vertices);
             glBufferData(GL_ARRAY_BUFFER, sizeof(V(0,0))*V.size(), &V(0,0), GL_STATIC_DRAW); 
             
+            std::cout << "computing normals\n";
+            igl::per_vertex_normals(V,F,N);
             std::cout << "setting normals\n";
             glGenBuffers(1, &vbo_normals);
             glBindBuffer(GL_ARRAY_BUFFER, vbo_normals);

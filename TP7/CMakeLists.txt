@@ -68,7 +68,9 @@ include_directories(
   ../glfw-3.1.2/include/GLFW/
   ../glm-0.9.7.1/
   ../glew-1.13.0/include/
+  ../libigl/include/
 )
+
 
 set(ALL_LIBS
   ${OPENGL_LIBRARY}
@@ -84,4 +86,5 @@ add_executable(
 target_link_libraries(
   ${PROJECT_NAME}
   ${ALL_LIBS}
+  ${GLFW_STATIC_LIBRARIES}
 )

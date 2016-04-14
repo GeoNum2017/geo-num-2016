@@ -85,4 +85,5 @@ add_executable(
 target_link_libraries(
   ${PROJECT_NAME}
   ${ALL_LIBS}
+  ${GLFW_STATIC_LIBRARIES}
 )

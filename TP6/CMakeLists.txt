@@ -60,15 +60,15 @@ elseif(DARWIN)
     )
 endif(UNIX AND NOT APPLE)
 
-message(${GLFW_LIBRARIES} )
 include_directories(
   .
   ..
-  ../eigen-3.2.7/
   ../SimpleViewer/
+  ../eigen-3.2.7/
   ../glfw-3.1.2/include/GLFW/
   ../glm-0.9.7.1/
   ../glew-1.13.0/include/
+  ../libigl/include/
 )
 
 set(ALL_LIBS
